@@ -15,14 +15,19 @@ from fastapi_sessions.frontends.implementations import SessionCookie, CookiePara
 
 from uuid import UUID, uuid4
 
-from routers import numberplate_detection
+from routers.numberplate_detection import NumberPlateDetection
+
+IMAGE_STORAGE_PATH = "/Users/mgx/Documents/censor_sam/app/images"
+
+numberplate_detector = NumberPlateDetection()
 
 app = FastAPI()
 
-app.include_router(numberplate_detection.router)
-
 class SessionData(BaseModel):
-    image: UploadFile
+    image_path: str
+    bboxes: List = []
+    masks: List = []
+    final_image: UploadFile = None
 
 cookie_params = CookieParameters()
 
@@ -84,17 +89,32 @@ verifier = BasicVerifier(
 async def create_session(file: UploadFile, response: Response):
 
     session = uuid4()
-    data = SessionData(image=file)
+    
+    file.filename = f"{session}.jpg"
+    contents = await file.read()
+    
+    file_path = f"{IMAGE_STORAGE_PATH}/{file.filename}"
+
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    prediction = numberplate_detector.predict(file_path)
+
+    if len(prediction["boxes"]) == 0:
+        return "no numberplate found"
+    
+    data = SessionData(image_path=file_path, bboxes = prediction["boxes"].tolist())
 
     await backend.create(session, data)
     cookie.attach_to_response(response, session)
 
-    return f"created session for {session, file.filename}"
+    return f"created session for {session, file_path, data.bboxes}"
 
 
 @app.get("/whoami", dependencies=[Depends(cookie)])
 async def whoami(session_data: SessionData = Depends(verifier)):
-    return session_data
+    #print(session_data.image.filename)
+    return session_data.image.filename
 
 
 @app.post("/delete_session")
