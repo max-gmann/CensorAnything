@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Web App</title>
+    <style>
+      /* add some styles for the page */
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+
+      input[type='file'] {
+        display: none;
+      }
+
+      label {
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+      }
+
+      img {
+        max-width: 80%;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Web App</h1>
+    <p>Upload an image and see the number plates detected</p>
+    <!-- create a form for uploading images -->
+    <form id="form" enctype="multipart/form-data">
+      <!-- create a hidden input for selecting files -->
+      <input
+        type="file"
+        id="file"
+        name="image"
+        accept="image/*"
+        onchange="previewImage()"
+      />
+      <!-- create a label for the input -->
+      <label for="file">Choose an image</label>
+      <!-- create a button for submitting the form -->
+      <button type="submit" id="submit" disabled>Upload</button>
+    </form>
+    <!-- create a div for displaying the image -->
+    <div id="image-container"></div>
+    <!-- add a script for handling the form submission and image display -->
+    <script>
+      // get the form element
+      const form = document.getElementById('form');
+
+      // get the file input element
+      const file = document.getElementById('file');
+
+      // get the submit button element
+      const submit = document.getElementById('submit');
+
+      // get the image container element
+      const imageContainer = document.getElementById('image-container');
+
+      // define a function for previewing the selected image
+      function previewImage() {
+        // create a new file reader
+        const reader = new FileReader();
+
+        // set the onload event handler
+        reader.onload = (e) => {
+          // create a new image element
+          const image = new Image();
+
+          // set the src attribute to the file reader result
+          image.src = e.target.result;
+
+          // set the alt attribute to the file name
+          image.alt = file.files[0].name;
+
+          // clear the image container
+          imageContainer.innerHTML = '';
+
+          // append the image to the image container
+          imageContainer.appendChild(image);
+
+          // enable the submit button
+          submit.disabled = false;
+        };
+
+        // read the selected file as a data url
+        reader.readAsDataURL(file.files[0]);
+      }
+
+      // define a function for submitting the form and processing the image
+      async function submitForm(e) {
+        // prevent the default form submission behavior
+        e.preventDefault();
+
+        // disable the submit button
+        submit.disabled = true;
+
+        // create a new form data object
+        const formData = new FormData();
+
+        // append the selected file to the form data
+        formData.append('image', file.files[0]);
+          
+        const response = await fetch('http://localhost:3000/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        // get the response data as a data url
+        const data = await response.text();
+
+        // create a new image element
+        const image = new Image();
+
+        // set the src attribute to the data url
+        image.src = data;
+
+        // set the alt attribute to the file name
+        image.alt = file.files[0].name;
+
+        // clear the image container
+        imageContainer.innerHTML = '';
+
+        // append the image to the image container
+        imageContainer.appendChild(image);
+      }
+
+      // add an event listener for the form submission
+      form.addEventListener('submit', submitForm);
+    </script>
+  </body>
+</html>

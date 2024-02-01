@@ -85,8 +85,8 @@ verifier = BasicVerifier(
 )
 
 
-@app.post("/create_session/{name}")
-async def create_session(file: UploadFile, response: Response):
+@app.post("/find_numberplates")
+async def find_numberplates(file: UploadFile, response: Response):
 
     session = uuid4()
     
@@ -108,7 +108,7 @@ async def create_session(file: UploadFile, response: Response):
     await backend.create(session, data)
     cookie.attach_to_response(response, session)
 
-    return f"created session for {session, file_path, data.bboxes}"
+    return data.bboxes
 
 
 @app.get("/whoami", dependencies=[Depends(cookie)])
