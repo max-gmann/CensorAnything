@@ -6,11 +6,39 @@ const { createCanvas, loadImage } = require('canvas');
 const { buffer } = require('stream/consumers');
 const fs = require('fs');
 const cors = require('cors');
-const cookieSession = require('cookie-session');
+const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
+
+const session = require('express-session');
+
+const secretKey = crypto.randomBytes(64).toString('hex');
+const baseUrl = "http://localhost:3000";
+
+function generateSignedUrl(imageName, expirationTime) {
+  // Create a string with the image name and the expiration time
+  const stringToSign = imageName + expirationTime;
+
+  // Create a hash using the secret key and the string to sign
+  const hash = crypto.createHmac('sha256', secretKey).update(stringToSign).digest('hex');
+
+  // Return the signed URL with the image name, the expiration time, and the hash as query parameters
+  return `${baseUrl}/images/${imageName}?expires=${expirationTime}&signature=${hash}`;
+}
+
 
 // create express app
 const app = express();
 app.use(cors());
+app.use(cookieParser());
+
+app.use(session({
+  secret: 'my-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 60 * 1000 * 5 // 5 minutes
+  }
+}));
 
 // set up static folder for serving html files
 app.use(express.static('public'));
@@ -46,16 +74,47 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
+app.get('/images/:imageName', (req, res) => {
+  // Get the image name, the expiration time, and the signature from the query parameters
+  const imageName = req.params.imageName;
+  const expirationTime = req.query.expires;
+  const signature = req.query.signature;
+
+  // Verify that the expiration time and the signature are valid
+  if (expirationTime && signature && Date.now() / 1000 < expirationTime && signature === generateSignedUrl(imageName, expirationTime).split('=')[2]) {
+    // Serve the image from the images folder
+    console.log(imageName)
+    const path = __dirname + '/generated_images/' + imageName;
+    res.sendFile(path);
+  } else {
+    // Send a 403 Forbidden error
+    res.status(403).send('Access denied');
+  }
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/home.html')
+});
+
 app.get('/censored_image', async (req, res) => {
-  console.log("Actually here")
+  console.log("Actually here");
   try {
-    const response = await axios.get('http://127.0.0.1:8000/get_segmented_image');
-    console.log("Response received censored");
-    console.log(response);
-    /* const canvas = createCanvas(image.width, image.height);
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(image, 0, 0); */
-    //res.send(canvas.toDataURL());
+    const response = await axios.get('http://127.0.0.1:8000/get_segmented_image?sessionId=' + req.session.id,
+      {
+        responseType: 'arraybuffer'
+      });
+
+    // get the image from the response and save it to a file
+    const imageData = response.data; // Assuming the image data is returned in the response body
+    const imgName = req.session.id + "_censored.jpg";
+    const fullName = __dirname + "/generated_images/" + imgName;
+    fs.writeFileSync(fullName, imageData);
+
+    const expirationTime = Date.now() / 1000 + 60 * 5; // 5 minutes
+    const signedUrl = generateSignedUrl(imgName, expirationTime);
+
+    res.json({ image_url: signedUrl });
+
   } catch (error) {
     console.error(error);
     res.status(500).send('Something went wrong');
@@ -65,11 +124,19 @@ app.get('/censored_image', async (req, res) => {
 
 // define a route for uploading and processing images
 app.post('/upload', upload.single('image'), async (req, res) => {
-    console.log("uploading")
+
+  let sessionId = req.session.id;
+
+  if (req.session.sessionId === sessionId){
+    console.log("Session is valid.");
+  } else {  
+    req.session.sessionId = sessionId;
+    console.log("new session was created.")
+  }
+
   try {
     // get the uploaded file
     const file = req.file;
-    console.log(file)
 
     // load the image from the file path
     const image = await loadImage(file.path);
@@ -90,6 +157,11 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     const formData = new FormData();
     formData.append("file", blob, "image.jpg");
+    // append sessionID to the form
+    console.log("Session ID: " + sessionId)
+    formData.append("sessionId", sessionId);
+    console.log("Form created");
+    console.log(formData);
 
     const response = await axios.post('http://127.0.0.1:8000/find_numberplates', 
       formData, 
@@ -103,6 +175,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     console.log("Response received");
     console.log(response.data);
     const boxes = response.data;
+      
 
     // define some colors for the boxes
     const colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan'];
@@ -123,11 +196,19 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     // send the modified image back to the client
     res.send(canvas.toDataURL());
   } catch (error) {
-    // handle any errors
-    console.log("An error has occured.")
-    console.error(error);
-    res.status(500).send('Something went wrong');
-  }
+    if (error.response) {
+        console.log("Error: " + error.response.data);
+        console.log("Status: " + error.response.status);
+        if (error.response.status === 500) {
+            return res.status(500).send('No numberplates found.');
+        }
+    } else if (error.request) {
+        console.log(error.request);
+    } else {
+        console.log("Error: " + error.message);
+    }
+    return res.status(500).send('An error occurred.');
+}
 });
 
 // start the server

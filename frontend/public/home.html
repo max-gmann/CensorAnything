@@ -23,7 +23,6 @@
       }
 
       img {
-        max-width: 80%;
         margin: 20px;
       }
 
@@ -35,6 +34,21 @@
         padding: 10px 20px;
         border-radius: 5px;
       }
+      #download {
+        display: none;
+        background-color: #416fd3;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+      }
+      #image-container img {
+        max-height: 70vh;
+        width: auto;
+        object-fit: cover;
+      }
+      #censor, #download {
+      width: 150px;
+  }
     </style>
   </head>
   <body>
@@ -55,10 +69,16 @@
       <!-- create a button for submitting the form -->
       <button type="submit" id="submit" disabled>Upload</button>
     </form>
-    <!-- create a div for displaying the image -->
+
     <div id="image-container"></div>
+
+    <div style="display: flex; justify-content: center;">
+      <button id="censor" onclick="censorImage()">Censor</button>
+      <a id="download">Download</a>
+    </div>    
+
+    
     <!-- create a button for censoring the image -->
-    <button id="censor" onclick="censorImage()">Censor</button>
     <!-- add a script for handling the form submission and image display -->
     <script>
       // get the form element
@@ -73,52 +93,11 @@
       // get the censor button element
       const censor = document.getElementById('censor');
 
+      // get the download button element
+      const download = document.getElementById('download');
+
       // get the image container element
       const imageContainer = document.getElementById('image-container');
-
-      // Generate a unique session ID
-      function generateSessionId() {
-        return Math.random().toString(36).substr(2, 9);
-      }
-
-      // Check if there is an existing session ID in the sessionStorage
-      let sessionId = sessionStorage.getItem("sessionId");
-
-      // If not, create a new one and store it in the sessionStorage
-      if (!sessionId) {
-        sessionId = generateSessionId();
-        sessionStorage.setItem("sessionId", sessionId);
-        alert("New session ID: " + sessionId);
-      }
-
-      // display session id as the title of the page
-      document.title = "Session ID: " + sessionId;
-
-      // Send the session ID to the backend via an AJAX request
-      let xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/session");
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.send(JSON.stringify({ sessionId: sessionId }));
-
-      // Set a timer to expire the session after 5 minutes of inactivity
-      let timer = setTimeout(function() {
-        // Clear the sessionStorage
-        sessionStorage.clear();
-        // Notify the user that the session has expired
-        alert("Your session has expired. Please reload the page.");
-      }, 5 * 60 * 1000); // 5 minutes in milliseconds
-
-      // Reset the timer whenever the user interacts with the page
-      window.addEventListener("click", function() {
-        clearTimeout(timer);
-        timer = setTimeout(function() {
-          // Clear the sessionStorage
-          sessionStorage.clear();
-          // Notify the user that the session has expired
-          alert("Your session has expired. Please reload the page.");
-        }, 5 * 60 * 1000);
-      });
-
 
       // define a function for previewing the selected image
       function previewImage() {
@@ -148,6 +127,8 @@
 
         // read the selected file as a data url
         reader.readAsDataURL(file.files[0]);
+        censor.style.display = 'none';
+        
       }
 
       // define a function for submitting the form and processing the image
@@ -168,6 +149,13 @@
           method: 'POST',
           body: formData,
         });
+
+        if (response.status === 500) {
+          console.log("hey we're here!")
+          alert("No numberplates were detected in the image. Please try another image.");
+          return;
+          console.log("should be here")
+        }
 
         //const token = response.header.get('X-Session-Token');
 
@@ -203,24 +191,27 @@
           method: 'GET',
         });
 
-        // get the response data as a data url
-        const data = await response.text();
+        const data = await response.json();
 
-        // create a new image element
-        const image = new Image();
+        const download = document.getElementById('download')
+        download.style.display = 'block';
 
-        // set the src attribute to the data url
-        image.src = data;
+        const imageUrl = data.image_url;
 
-        // set the alt attribute to the file name
-        image.alt = file.files[0].name;
+        console.log("hello world 1");
+        const image = imageContainer.querySelector('img');
 
-        // clear the image container
-        imageContainer.innerHTML = '';
+        image.src = imageUrl;
+        console.log("hello world 2");
 
-        // append the image to the image container
-        imageContainer.appendChild(image);
-      }
+        console.log("Here i am " + imageUrl);
+
+        download.href = imageUrl;
+        // Set the download attribute of the download link to the desired file name
+        download.download = 'censored_image.jpg';
+        console.log("done");
+
+        };
 
       // add an event listener for the form submission
       form.addEventListener('submit', submitForm);

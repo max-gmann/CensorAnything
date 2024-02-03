@@ -24,7 +24,4 @@ def censor_image(image_path, mask, blur_kernel=60):
 
     final_image = cv2.add(img1, img2)
 
-    test = cv2.cvtColor(final_image, cv2.COLOR_RGB2BGR)
-    cv2.imwrite("after.jpg", test)
-
-    return final_image
+    return cv2.cvtColor(final_image, cv2.COLOR_RGB2BGR)
