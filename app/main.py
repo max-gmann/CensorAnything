@@ -13,13 +13,18 @@ from fastapi_sessions.backends.implementations import InMemoryBackend
 from fastapi import HTTPException, FastAPI, Response, Depends
 from fastapi_sessions.frontends.implementations import SessionCookie, CookieParameters
 
+from torchvision.io import read_image
+
 from uuid import UUID, uuid4
 
 from routers.numberplate_detection import NumberPlateDetection
+from routers.image_segmentation import ImageSegmentation
+from routers.image_censoring import censor_image
 
 IMAGE_STORAGE_PATH = "/Users/mgx/Documents/censor_sam/app/images"
 
 numberplate_detector = NumberPlateDetection()
+image_segmentor = ImageSegmentation()
 
 app = FastAPI()
 
@@ -110,11 +115,29 @@ async def find_numberplates(file: UploadFile, response: Response):
 
     return data.bboxes
 
+# async def add_bbox(session_data: SessionData, bbox: List):
+
+@app.get("/get_segmented_image", dependencies=[Depends(cookie)])
+async def segment_image(session_data: SessionData = Depends(verifier)):
+    masks = image_segmentor.predict(image_path=session_data.image_path, 
+                                    bboxes= session_data.bboxes)
+    print("Masks generated successfully.")
+    print(masks)
+    
+    final_image = censor_image(session_data.image_path, masks)
+    # save final image to disk
+
+    import cv2
+    cv2.imwrite("number_one.jpg", final_image)
+
+
+    return session_data
+
 
 @app.get("/whoami", dependencies=[Depends(cookie)])
 async def whoami(session_data: SessionData = Depends(verifier)):
     #print(session_data.image.filename)
-    return session_data.image.filename
+    return session_data
 
 
 @app.post("/delete_session")
