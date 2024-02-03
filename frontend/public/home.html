@@ -76,6 +76,50 @@
       // get the image container element
       const imageContainer = document.getElementById('image-container');
 
+      // Generate a unique session ID
+      function generateSessionId() {
+        return Math.random().toString(36).substr(2, 9);
+      }
+
+      // Check if there is an existing session ID in the sessionStorage
+      let sessionId = sessionStorage.getItem("sessionId");
+
+      // If not, create a new one and store it in the sessionStorage
+      if (!sessionId) {
+        sessionId = generateSessionId();
+        sessionStorage.setItem("sessionId", sessionId);
+        alert("New session ID: " + sessionId);
+      }
+
+      // display session id as the title of the page
+      document.title = "Session ID: " + sessionId;
+
+      // Send the session ID to the backend via an AJAX request
+      let xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/session");
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(JSON.stringify({ sessionId: sessionId }));
+
+      // Set a timer to expire the session after 5 minutes of inactivity
+      let timer = setTimeout(function() {
+        // Clear the sessionStorage
+        sessionStorage.clear();
+        // Notify the user that the session has expired
+        alert("Your session has expired. Please reload the page.");
+      }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+      // Reset the timer whenever the user interacts with the page
+      window.addEventListener("click", function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+          // Clear the sessionStorage
+          sessionStorage.clear();
+          // Notify the user that the session has expired
+          alert("Your session has expired. Please reload the page.");
+        }, 5 * 60 * 1000);
+      });
+
+
       // define a function for previewing the selected image
       function previewImage() {
         // create a new file reader
