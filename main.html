@@ -1,0 +1,112 @@
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Upload and Bounding Box Demo</h1>
+    <input type="file" id="image-file" accept="image/*">
+    <button id="upload-button">Upload</button>
+    <canvas id="image-canvas" width="500" height="500"></canvas>
+    <script>
+        // Get the elements from the document
+        var imageFile = document.getElementById("image-file");
+        var uploadButton = document.getElementById("upload-button");
+        var imageCanvas = document.getElementById("image-canvas");
+        var imageContext = imageCanvas.getContext("2d");
+
+        // Define some colors for the bounding boxes
+        var colors = ["red", "green", "blue", "yellow", "magenta", "cyan"];
+
+        // Define the API address (use a placeholder for now)
+        var apiAddress = "http://127.0.0.1:8000/find_numberplates";
+
+        // Define a function to draw a bounding box on the canvas
+        function drawBoundingBox(x1, y1, x2, y2, color) {
+            imageContext.strokeStyle = color;
+            imageContext.lineWidth = 2;
+            imageContext.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        }
+
+        // Define a function to handle the upload button click
+        function uploadImage() {
+            // Check if the user selected a file
+            if (imageFile.files.length > 0) {
+                // Get the first file from the input
+                var file = imageFile.files[0];
+
+                // Create a FileReader object to read the file
+                var reader = new FileReader();
+
+                // Define a function to handle the load event
+                reader.onload = function(e) {
+                    // Get the image data from the reader
+                    var imageData = e.target.result;
+
+                    // Create an Image object to display the image
+                    var image = new Image();
+
+                    // Define a function to handle the load event
+                    image.onload = function() {
+                        // Clear the canvas
+                        imageContext.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+
+                        // Draw the image on the canvas
+                        imageContext.drawImage(image, 0, 0, imageCanvas.width, imageCanvas.height);
+
+                        // Send the image data to the API using jQuery
+                        $.ajax({
+                            url: apiAddress,
+                            method: "POST",
+                            data: imageData,
+                            contentType: "image/jpeg",
+                            success: function(data) {
+                                // Parse the data as JSON
+                                var jsonData = JSON.parse(data);
+
+                                // Check if the data contains a list of bounding boxes
+                                if (jsonData.hasOwnProperty("boxes")) {
+                                    // Get the list of bounding boxes
+                                    var boxes = jsonData["boxes"];
+
+                                    // Loop through the boxes
+                                    for (var i = 0; i < boxes.length; i++) {
+                                        // Get the coordinates of the box
+                                        var x1 = boxes[i][0];
+                                        var y1 = boxes[i][1];
+                                        var x2 = boxes[i][2];
+                                        var y2 = boxes[i][3];
+
+                                        // Get a color from the array
+                                        var color = colors[i % colors.length];
+
+                                        // Draw the box on the canvas
+                                        drawBoundingBox(x1, y1, x2, y2, color);
+                                    }
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                // Display an alert message in case of error
+                                alert("Error: " + error);
+                            }
+                        });
+                    };
+
+                    // Set the source of the image to the image data
+                    image.src = imageData;
+                };
+
+                // Read the file as a data URL
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Add a click event listener to the upload button
+        uploadButton.addEventListener("click", uploadImage);
+    </script>
+</body>
+</html>
