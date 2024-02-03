@@ -12,11 +12,6 @@ const cookieSession = require('cookie-session');
 const app = express();
 app.use(cors());
 
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2nd']
-}));
-
 // set up static folder for serving html files
 app.use(express.static('public'));
 
@@ -46,7 +41,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 1024 * 5 // limit the file size to 5 MB
+    fileSize: 1024 * 1024 * 25 // limit the file size to 25 MB
   },
   fileFilter: fileFilter
 });
