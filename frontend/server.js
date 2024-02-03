@@ -6,10 +6,16 @@ const { createCanvas, loadImage } = require('canvas');
 const { buffer } = require('stream/consumers');
 const fs = require('fs');
 const cors = require('cors');
+const cookieSession = require('cookie-session');
 
 // create express app
 const app = express();
 app.use(cors());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2nd']
+}));
 
 // set up static folder for serving html files
 app.use(express.static('public'));
@@ -43,6 +49,23 @@ const upload = multer({
     fileSize: 1024 * 1024 * 5 // limit the file size to 5 MB
   },
   fileFilter: fileFilter
+});
+
+app.get('/censored_image', async (req, res) => {
+  console.log("Actually here")
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/get_segmented_image');
+    console.log("Response received censored");
+    console.log(response);
+    /* const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0); */
+    //res.send(canvas.toDataURL());
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Something went wrong');
+  }
+  console.log("Ending");
 });
 
 // define a route for uploading and processing images
