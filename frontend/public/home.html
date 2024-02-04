@@ -273,13 +273,17 @@
 
         // Add an event listener to the button to remove the bounding box and the button itself when clicked
         button.addEventListener('click', function() {
-          const index = boxes.indexOf(mappedBox);
+          var index = boxes.indexOf(mappedBox);
           if (index > -1) {
             boxes.splice(index, 1);
+          }
+          
+          var index = display_boxes.indexOf(box);
+          if (index > -1) {
             display_boxes.splice(index, 1);
           }
           imageContainer.removeChild(button);
-          imageContainer.removeChild(coordinates);
+          //imageContainer.removeChild(coordinates);
           redrawBoxes();
         });
       }
