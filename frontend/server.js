@@ -115,8 +115,19 @@ app.post('/censored_image', async (req, res) => {
     const fullName = __dirname + "/generated_images/" + imgName;
     fs.writeFileSync(fullName, imageData);
 
-    const expirationTime = Date.now() / 1000 + 60 * 5; // 5 minutes
+    const expirationTime = Date.now() / 1000 * 60 * 5; // 5 minutes
     const signedUrl = generateSignedUrl(imgName, expirationTime);
+
+    setTimeout(() => {
+      fs.unlink(fullName, (err) => {
+        if (err) {
+          console.error(`Failed to delete file: ${err}`);
+        } else {
+          console.log(`Deleted file: ${fullName}`);
+        }
+      });
+    }, 1000 * 60 * 5); 
+
 
     res.json({ image_url: signedUrl });
 
@@ -149,6 +160,17 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     // load the image from the file path
     const image = await loadImage(file.path);
+
+    setTimeout(() => {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error(`Failed to delete file: ${err}`);
+        } else {
+          console.log(`Deleted file: ${file.path}`);
+        }
+      });
+    }, 1000 * 10 * 5);
+    console.log("Image loaded")
 
     // create a canvas with the same size as the image
     const canvas = createCanvas(image.width, image.height);

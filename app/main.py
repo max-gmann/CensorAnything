@@ -1,7 +1,7 @@
-import cv2
+import cv2, os
 from typing import Union, Annotated, List
 from fastapi import FastAPI, File, UploadFile, Request, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from pydantic import BaseModel
 
@@ -37,11 +37,22 @@ class Box(BaseModel):
 class BoxesData(BaseModel):
     boxes: List[Box]
 
+def file_streamer(path):
+    with open(path, 'rb') as f:
+        yield from f
+    os.remove(path)
+
+# content for debugging only
 uploads = {"test": 
            {"image_path": IMAGE_STORAGE_PATH + "/test.jpg", 
             "bboxes": [[1542.46240234375,3424.305908203125,2121.431884765625,3575.4013671875]]
             }
     }
+
+def file_streamer(path):
+    with open(path, 'rb') as f:
+        yield from f
+    os.remove(path)
 
 app = FastAPI()
 
@@ -95,6 +106,12 @@ async def segment_image(request: Request, boxes_data: BoxesData):
     new_image_path = f"{IMAGE_STORAGE_PATH}/{session_id}_censored.jpg"
     cv2.imwrite(new_image_path, final_image)
 
-    return FileResponse(new_image_path, media_type="image/jpeg", filename="censored_image.jpg")
+    original_image_path = new_image_path.replace("_censored", "")
+    os.remove(original_image_path)
+
+    del uploads[session_id]
+    
+    return StreamingResponse(file_streamer(new_image_path), 
+                             media_type="image/jpeg")
 
 
