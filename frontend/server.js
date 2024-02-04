@@ -14,6 +14,8 @@ const session = require('express-session');
 const secretKey = crypto.randomBytes(64).toString('hex');
 const baseUrl = "http://localhost:3000";
 
+const pythonEndpoint = "http://host.docker.internal:8000";
+
 function generateSignedUrl(imageName, expirationTime) {
   // Create a string with the image name and the expiration time
   const stringToSign = imageName + expirationTime;
@@ -100,7 +102,7 @@ app.get('/', (req, res) => {
 app.post('/censored_image', async (req, res) => {
   console.log(req.body.boxes);
   try {
-    const response = await axios.post('http://127.0.0.1:8000/get_segmented_image?sessionId=' + req.session.id,
+    const response = await axios.post(pythonEndpoint + '/get_segmented_image?sessionId=' + req.session.id,
       {boxes: req.body.boxes}, 
       {
         responseType: 'arraybuffer',
@@ -132,7 +134,7 @@ app.post('/censored_image', async (req, res) => {
     res.json({ image_url: signedUrl });
 
   } catch (error) {
-    if (error.response.status === 400) {
+    if (error.response && error.response.status === 400) {
       res.status(400).send('Nothing to censor.');
     } else {
       console.error(error);
@@ -169,7 +171,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
           console.log(`Deleted file: ${file.path}`);
         }
       });
-    }, 1000 * 10 * 5);
+    }, 1000 * 60 * 2);
     console.log("Image loaded")
 
     // create a canvas with the same size as the image
@@ -192,9 +194,8 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     console.log("Session ID: " + sessionId)
     formData.append("sessionId", sessionId);
     console.log("Form created");
-    console.log(formData);
 
-    const response = await axios.post('http://127.0.0.1:8000/find_numberplates', 
+    const response = await axios.post(pythonEndpoint + '/find_numberplates', 
       formData, 
       {
         headers: {
@@ -204,14 +205,10 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     );
     
     console.log("Response received");
-    console.log(response.data);
     const boxes = response.data;
       
-
-    // define some colors for the boxes
     const colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan'];
 
-    // loop through the boxes and draw them on the canvas
     for (let i = 0; i < boxes.length; i++) {
       const [x1, y1, x2, y2] = boxes[i];
 
@@ -221,7 +218,6 @@ app.post('/upload', upload.single('image'), async (req, res) => {
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
     }
 
-    // send the modified image back to the client
     res.send(canvas.toDataURL());
   } catch (error) {
     if (error.response) {
@@ -239,7 +235,6 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 }
 });
 
-// start the server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

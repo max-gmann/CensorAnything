@@ -98,7 +98,6 @@ class ImageSegmentation:
             print(new_h, new_w)
             mask = mask[:new_h, :new_w]
         # Resize the mask
-        #mask = ops.image.resize(mask[None, ...], (h, w))[0]
         mask =cv2.resize(mask, (w, h), interpolation=cv2.INTER_CUBIC)
         # Cast the mask
         mask = ops.cast(mask, dtype="float32")

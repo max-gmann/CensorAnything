@@ -1,29 +1,18 @@
 import cv2, os
-from typing import Union, Annotated, List
+from typing import List
+
 from fastapi import FastAPI, File, UploadFile, Request, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
+from fastapi import FastAPI
+from fastapi import HTTPException, FastAPI
 
 from pydantic import BaseModel
-
-from uuid import UUID, uuid4
-
-from fastapi_sessions.backends.implementations import InMemoryBackend
-from fastapi import FastAPI, Response, Depends
-
-from fastapi_sessions.session_verifier import SessionVerifier
-from fastapi_sessions.backends.implementations import InMemoryBackend
-from fastapi import HTTPException, FastAPI, Response, Depends
-from fastapi_sessions.frontends.implementations import SessionCookie, CookieParameters
-
-from torchvision.io import read_image
-
-from uuid import UUID, uuid4
 
 from routers.numberplate_detection import NumberPlateDetection
 from routers.image_segmentation import ImageSegmentation
 from routers.image_censoring import censor_image
 
-IMAGE_STORAGE_PATH = "/Users/mgx/Documents/censor_sam/app/images"
+IMAGE_STORAGE_PATH = "./images"
 
 numberplate_detector = NumberPlateDetection()
 image_segmentor = ImageSegmentation()
@@ -81,8 +70,6 @@ async def find_numberplates(file: UploadFile, sessionId: str = File(...)):
 
     return bboxes
 
-# async def add_bbox(session_data: SessionData, bbox: List):
-
 @app.post("/get_segmented_image")
 async def segment_image(request: Request, boxes_data: BoxesData):
     session_id = request.query_params["sessionId"]
@@ -106,8 +93,11 @@ async def segment_image(request: Request, boxes_data: BoxesData):
     new_image_path = f"{IMAGE_STORAGE_PATH}/{session_id}_censored.jpg"
     cv2.imwrite(new_image_path, final_image)
 
-    original_image_path = new_image_path.replace("_censored", "")
+    original_image_path = uploads[session_id]["image_path"]
     os.remove(original_image_path)
+
+    print("deleting", new_image_path)
+    print("deleting", uploads[session_id]["image_path"])
 
     del uploads[session_id]
     
