@@ -16,24 +16,25 @@ class ImageSegmentation:
     def predict(self, image_path, bboxes):
         image = np.array(keras.utils.load_img(image_path))
         original_resolution = image.shape[:2]
-        print(image.shape)
-        print(original_resolution)
         image = self.__inference_resizing(image)
-        bboxes = self.__scale_bbox(original_resolution, image.shape[:2], bboxes)
-        bboxes = self.__parse_bboxes(bboxes)
-        print("Even got here")
-        outputs = self.model.predict(
-            {"images": image[np.newaxis, ...], "boxes": bboxes}
-        )
-        print("Surely were not getting here")
-        masks = self.__inference_resizing(outputs["masks"][0][0][..., None], pad=False)[..., 0]
-        masks = ops.convert_to_numpy(masks) > 0.0
-        masks = masks.astype(np.uint8)
-        print(masks.shape)
+        overall_mask = np.zeros(original_resolution, dtype=np.uint8)
+        print("bboxes", bboxes)
+        for bbox in bboxes:
+            scaled_bbox = self.__scale_bbox(original_resolution, image.shape[:2], [bbox])
+            parsed_bbox = self.__parse_bboxes(scaled_bbox)
+            print(parsed_bbox.shape)
+            print(parsed_bbox)
 
-        masks = self.__reverse_resizing(masks, original_resolution)
+            outputs = self.model.predict(
+                {"images": image[np.newaxis, ...], "boxes": parsed_bbox}
+            )
+            mask = self.__inference_resizing(outputs["masks"][0][0][..., None], pad=False)[..., 0]
+            mask = ops.convert_to_numpy(mask) > 0.0
+            mask = mask.astype(np.uint8)
+            mask = self.__reverse_resizing(mask, original_resolution)
+            overall_mask = np.logical_or(overall_mask, mask)
 
-        return masks
+        return overall_mask
 
     
     def __inference_resizing(self, image, pad=True):
