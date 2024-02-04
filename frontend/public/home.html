@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Web App</title>
+    <title>Numberplate Censoring</title>
     <style>
       /* add some styles for the page */
       body {
@@ -26,7 +26,6 @@
         margin: 20px;
       }
 
-      /* add a style for the censor button */
       #censor {
         display: none;
         background-color: #f44336;
@@ -41,22 +40,48 @@
         padding: 10px 20px;
         border-radius: 5px;
       }
+      #censor, #download {
+      width: 150px;
+      }
       #image-container img {
         max-height: 70vh;
         width: auto;
         object-fit: cover;
       }
-      #censor, #download {
-      width: 150px;
-  }
+      #loading {
+        display: none;
+        border: 16px solid #f3f3f3;
+        border-top: 16px solid #3498db;
+        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        animation: spin 2s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      #image-container {
+        position: relative;
+      }
+      #image-container.loading img {
+        filter: blur(5px); 
+        position: relative;
+      }
+      #image-container #loading {
+        position: fixed; 
+        top: calc(50% - 50px); 
+        left: calc(50% - 50px); 
+        transform: translate(-50%, -50%);
+        z-index: 100;
+      }
+
     </style>
   </head>
   <body>
     <h1>Web App</h1>
-    <p>Upload an image and see the number plates detected</p>
-    <!-- create a form for uploading images -->
+    <p>Upload an image to detect and censor any numberplates on it.</p>
     <form id="form" enctype="multipart/form-data">
-      <!-- create a hidden input for selecting files -->
       <input
         type="file"
         id="file"
@@ -64,13 +89,14 @@
         accept="image/*"
         onchange="previewImage()"
       />
-      <!-- create a label for the input -->
       <label for="file">Choose an image</label>
-      <!-- create a button for submitting the form -->
       <button type="submit" id="submit" disabled>Upload</button>
     </form>
-
-    <div id="image-container"></div>
+    
+    
+    <div id="image-container">
+      <div id="loading"></div>
+    </div>
 
     <div style="display: flex; justify-content: center;">
       <button id="censor" onclick="censorImage()">Censor</button>
@@ -114,9 +140,14 @@
 
           // set the alt attribute to the file name
           image.alt = file.files[0].name;
+          
+          const images_in_div = imageContainer.getElementsByTagName('img');
+          while(images_in_div[0]) {
+            images_in_div[0].parentNode.removeChild(images_in_div[0]);
+          }
 
           // clear the image container
-          imageContainer.innerHTML = '';
+          //imageContainer.innerHTML = '';
 
           // append the image to the image container
           imageContainer.appendChild(image);
@@ -128,7 +159,7 @@
         // read the selected file as a data url
         reader.readAsDataURL(file.files[0]);
         censor.style.display = 'none';
-        
+        download.style.display = 'none';
       }
 
       // define a function for submitting the form and processing the image
@@ -138,6 +169,8 @@
 
         // disable the submit button
         submit.disabled = true;
+        
+        startLoadingAnimation();
 
         // create a new form data object
         const formData = new FormData();
@@ -150,8 +183,8 @@
           body: formData,
         });
 
-        if (response.status === 500) {
-          console.log("hey we're here!")
+        if (response.status === 400) {
+          stopLoadingAnimation();
           alert("No numberplates were detected in the image. Please try another image.");
           return;
           console.log("should be here")
@@ -165,6 +198,10 @@
         // create a new image element
         const image = new Image();
 
+        image.onload = function() {
+          stopLoadingAnimation();
+        };
+
         // set the src attribute to the data url
         image.src = data;
 
@@ -172,7 +209,10 @@
         image.alt = file.files[0].name;
 
         // clear the image container
-        imageContainer.innerHTML = '';
+        const images_in_div = imageContainer.getElementsByTagName('img');
+          while(images_in_div[0]) {
+            images_in_div[0].parentNode.removeChild(images_in_div[0]);
+          }
 
         // append the image to the image container
         imageContainer.appendChild(image);
@@ -198,22 +238,29 @@
 
         const imageUrl = data.image_url;
 
-        console.log("hello world 1");
         const image = imageContainer.querySelector('img');
 
         image.src = imageUrl;
-        console.log("hello world 2");
-
-        console.log("Here i am " + imageUrl);
 
         download.href = imageUrl;
         // Set the download attribute of the download link to the desired file name
         download.download = 'censored_image.jpg';
         console.log("done");
 
-        };
+      };
 
-      // add an event listener for the form submission
+      function startLoadingAnimation() {
+        var loading = document.getElementById('image-container').querySelector('#loading');
+        loading.style.display = 'block';
+        imageContainer.classList.add('loading');
+      };
+
+      function stopLoadingAnimation() {
+        var loading = document.getElementById('image-container').querySelector('#loading');
+        loading.style.display = 'none';
+        imageContainer.classList.remove('loading');
+      };
+
       form.addEventListener('submit', submitForm);
     </script>
   </body>
