@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <title>Numberplate Censoring</title>
     <style>
-      /* add some styles for the page */
       body {
         font-family: Arial, sans-serif;
         text-align: center;
@@ -30,18 +29,17 @@
         display: none;
         background-color: #f44336;
         color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
       }
       #download {
         display: none;
         background-color: #416fd3;
         color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
       }
       #censor, #download {
-      width: 150px;
+        width: 150px;
+        cursor: pointer;
+        padding: 10px 20px;
+        border-radius: 5px;
       }
       #image-container img {
         max-height: 70vh;
@@ -79,7 +77,7 @@
     </style>
   </head>
   <body>
-    <h1>Web App</h1>
+    <h1>Number Plate Censoring</h1>
     <p>Upload an image to detect and censor any numberplates on it.</p>
     <form id="form" enctype="multipart/form-data">
       <input
@@ -103,42 +101,27 @@
       <a id="download">Download</a>
     </div>    
 
-    
-    <!-- create a button for censoring the image -->
-    <!-- add a script for handling the form submission and image display -->
     <script>
-      // get the form element
       const form = document.getElementById('form');
 
-      // get the file input element
       const file = document.getElementById('file');
 
-      // get the submit button element
       const submit = document.getElementById('submit');
 
-      // get the censor button element
       const censor = document.getElementById('censor');
 
-      // get the download button element
       const download = document.getElementById('download');
 
-      // get the image container element
       const imageContainer = document.getElementById('image-container');
 
-      // define a function for previewing the selected image
       function previewImage() {
-        // create a new file reader
         const reader = new FileReader();
 
-        // set the onload event handler
         reader.onload = (e) => {
-          // create a new image element
           const image = new Image();
 
-          // set the src attribute to the file reader result
           image.src = e.target.result;
 
-          // set the alt attribute to the file name
           image.alt = file.files[0].name;
           
           const images_in_div = imageContainer.getElementsByTagName('img');
@@ -146,36 +129,25 @@
             images_in_div[0].parentNode.removeChild(images_in_div[0]);
           }
 
-          // clear the image container
-          //imageContainer.innerHTML = '';
-
-          // append the image to the image container
           imageContainer.appendChild(image);
 
-          // enable the submit button
           submit.disabled = false;
         };
 
-        // read the selected file as a data url
         reader.readAsDataURL(file.files[0]);
         censor.style.display = 'none';
         download.style.display = 'none';
       }
 
-      // define a function for submitting the form and processing the image
       async function submitForm(e) {
         // prevent the default form submission behavior
         e.preventDefault();
 
-        // disable the submit button
         submit.disabled = true;
         
         startLoadingAnimation();
 
-        // create a new form data object
         const formData = new FormData();
-
-        // append the selected file to the form data
         formData.append('image', file.files[0]);
           
         const response = await fetch('http://localhost:3000/upload', {
@@ -190,43 +162,30 @@
           console.log("should be here")
         }
 
-        //const token = response.header.get('X-Session-Token');
-
-        // get the response data as a data url
         const data = await response.text();
-
-        // create a new image element
         const image = new Image();
 
         image.onload = function() {
           stopLoadingAnimation();
         };
 
-        // set the src attribute to the data url
         image.src = data;
-
-        // set the alt attribute to the file name
         image.alt = file.files[0].name;
 
-        // clear the image container
         const images_in_div = imageContainer.getElementsByTagName('img');
           while(images_in_div[0]) {
             images_in_div[0].parentNode.removeChild(images_in_div[0]);
           }
 
-        // append the image to the image container
         imageContainer.appendChild(image);
 
-        // show the censor button
         censor.style.display = 'block';
       }
 
-      // define a function for censoring the image
       async function censorImage() {
-        // hide the censor button
         censor.style.display = 'none';
+        startLoadingAnimation();
 
-        // send a get request to the server
         const response = await fetch('http://localhost:3000/censored_image', {
           method: 'GET',
         });
@@ -243,10 +202,9 @@
         image.src = imageUrl;
 
         download.href = imageUrl;
-        // Set the download attribute of the download link to the desired file name
         download.download = 'censored_image.jpg';
-        console.log("done");
 
+        stopLoadingAnimation();
       };
 
       function startLoadingAnimation() {
