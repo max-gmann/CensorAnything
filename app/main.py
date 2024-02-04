@@ -28,6 +28,14 @@ IMAGE_STORAGE_PATH = "/Users/mgx/Documents/censor_sam/app/images"
 numberplate_detector = NumberPlateDetection()
 image_segmentor = ImageSegmentation()
 
+class Box(BaseModel):
+    startX: float
+    startY: float
+    endX: float
+    endY: float
+
+class BoxesData(BaseModel):
+    boxes: List[Box]
 
 uploads = {"test": 
            {"image_path": IMAGE_STORAGE_PATH + "/test.jpg", 
@@ -55,23 +63,27 @@ async def find_numberplates(file: UploadFile, sessionId: str = File(...)):
     bboxes = prediction["boxes"].tolist()
 
     if len(bboxes) == 0:
-        raise HTTPException(status_code=500, detail="No number plates found")
+        uploads[sessionId] = {"image_path": file_path, "bboxes": bboxes}
+        raise HTTPException(status_code=400, detail="No number plates found")
 
     uploads[sessionId] = {"image_path": file_path, "bboxes": bboxes}
-    print(uploads)
-
 
     return bboxes
 
 # async def add_bbox(session_data: SessionData, bbox: List):
 
-@app.get("/get_segmented_image")
-async def segment_image(request: Request):
-    print(uploads)
-    print(request)
-    print(request.query_params)
-    # get sessionId from request
+@app.post("/get_segmented_image")
+async def segment_image(request: Request, boxes_data: BoxesData):
     session_id = request.query_params["sessionId"]
+
+    boxes = boxes_data.boxes
+    boxes_list = [[box.startX, box.startY, box.endX, box.endY] for box in boxes]
+
+    uploads[session_id]["bboxes"].extend(boxes_list)
+
+    print(uploads[session_id]["bboxes"])
+
+    # get sessionId from request
 
     if session_id not in uploads.keys():
         return "Session not found"
