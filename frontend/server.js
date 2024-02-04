@@ -30,6 +30,7 @@ function generateSignedUrl(imageName, expirationTime) {
 const app = express();
 app.use(cors());
 app.use(cookieParser());
+app.use(express.json());
 
 app.use(session({
   secret: 'my-secret',
@@ -96,12 +97,16 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/home.html')
 });
 
-app.get('/censored_image', async (req, res) => {
-  console.log("Actually here");
+app.post('/censored_image', async (req, res) => {
+  console.log(req.body.boxes);
   try {
-    const response = await axios.get('http://127.0.0.1:8000/get_segmented_image?sessionId=' + req.session.id,
+    const response = await axios.post('http://127.0.0.1:8000/get_segmented_image?sessionId=' + req.session.id,
+      {boxes: req.body.boxes}, 
       {
-        responseType: 'arraybuffer'
+        responseType: 'arraybuffer',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
     // get the image from the response and save it to a file
@@ -182,14 +187,11 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 
     // loop through the boxes and draw them on the canvas
     for (let i = 0; i < boxes.length; i++) {
-      // get the box coordinates
       const [x1, y1, x2, y2] = boxes[i];
 
-      // set the stroke style and line width
       ctx.strokeStyle = colors[i % colors.length];
-      ctx.lineWidth = 5;
+      ctx.lineWidth = image.width * 0.005;
 
-      // draw the box
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
     }
 
@@ -199,8 +201,8 @@ app.post('/upload', upload.single('image'), async (req, res) => {
     if (error.response) {
         console.log("Error: " + error.response.data);
         console.log("Status: " + error.response.status);
-        if (error.response.status === 500) {
-            return res.status(500).send('No numberplates found.');
+        if (error.response.status === 400) {
+            return res.status(400).send('No numberplates found.');
         }
     } else if (error.request) {
         console.log(error.request);
