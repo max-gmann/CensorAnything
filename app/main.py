@@ -81,17 +81,14 @@ async def segment_image(request: Request, boxes_data: BoxesData):
 
     uploads[session_id]["bboxes"].extend(boxes_list)
 
-    print(uploads[session_id]["bboxes"])
-
-    # get sessionId from request
-
     if session_id not in uploads.keys():
         return "Session not found"
 
+    if len(uploads[session_id]["bboxes"]) == 0:
+        raise HTTPException(status_code=400, detail="Nothing to censor.")
+
     masks = image_segmentor.predict(image_path=uploads[session_id]["image_path"], 
                                     bboxes= uploads[session_id]["bboxes"])
-    print("Masks generated successfully.")
-    print(masks)
     
     final_image = censor_image(uploads[session_id]["image_path"], masks)
     

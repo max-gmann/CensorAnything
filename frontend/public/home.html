@@ -80,7 +80,7 @@
 
         if (response.status === 400) {
           stopLoadingAnimation();
-          alert("No numberplates were detected in the image. Please try another image.");
+          alert("No numberplates were detected in the image. Please select them manually.");
           initCanvas();
           censor.style.display = 'block';
           return;
@@ -118,6 +118,13 @@
           },
           body: JSON.stringify({boxes: boxes})
         });
+        
+        if (response.status === 400) {
+          stopLoadingAnimation();
+          alert("Nothing to censor. Please draw a box around objects you want to censor.");
+          censor.style.display = 'block';
+          return;
+        }
 
         const data = await response.json();
 
@@ -239,9 +246,9 @@
 
         boxes.push(mappedBox);
         display_boxes.push(box);
-        const coordinates = document.createElement('p');
-        coordinates.textContent = `(${mappedBox.startX}, ${mappedBox.startY}), (${mappedBox.endX}, ${mappedBox.endY})`;
-        imageContainer.appendChild(coordinates);
+        //const coordinates = document.createElement('p');
+        //coordinates.textContent = `(${mappedBox.startX}, ${mappedBox.startY}), (${mappedBox.endX}, ${mappedBox.endY})`;
+        //imageContainer.appendChild(coordinates);
 
         // Create a button for each bounding box
         const button = document.createElement('button');

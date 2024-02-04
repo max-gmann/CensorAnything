@@ -121,8 +121,12 @@ app.post('/censored_image', async (req, res) => {
     res.json({ image_url: signedUrl });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Something went wrong');
+    if (error.response.status === 400) {
+      res.status(400).send('Nothing to censor.');
+    } else {
+      console.error(error);
+      res.status(500).send('Something went wrong');
+    }
   }
   console.log("Ending");
 });
