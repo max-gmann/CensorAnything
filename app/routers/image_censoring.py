@@ -3,18 +3,18 @@ import cv2
 import keras
 from keras import ops
 
-def censor_image(image_path, mask, blur_kernel=60):
+def censor_image(image_path, mask):
     print(mask.shape, mask.dtype)
     image = np.array(keras.utils.load_img(image_path))
     img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    cv2.imwrite("before.jpg", image)
+
+    # calculate blur_kernel based on image dimensions
+    blur_kernel = int(max(image.shape[:2]) / 100 * 1.5)
 
     blurred_image = cv2.blur(image, (blur_kernel, blur_kernel))
-    cv2.imwrite("blurred.jpg", blurred_image)
 
-    mask = ops.convert_to_numpy(mask) #> 0.0
+    mask = ops.convert_to_numpy(mask)
     mask = mask.astype(np.uint8) * 255
-    #mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
     print(mask.shape, mask.dtype)
     print(image.shape, image.dtype)
