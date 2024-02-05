@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'frontend/**'
-      - '.github/workflows/backend_docker_build_and_publish.yml'
+      - '.github/workflows/frontend_docker_build_and_publish.yml'
 
 jobs:
   build:
