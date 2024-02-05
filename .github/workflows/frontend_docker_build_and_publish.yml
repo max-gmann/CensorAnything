@@ -40,12 +40,12 @@ jobs:
         gcloud compute instances start censor-everything-big-vm --zone=us-central1-a
         gcloud compute ssh censor-everything-big-vm --zone=us-central1-a --command="\
           docker pull max94/censor_anything_frontend:latest && \
-          docker pull max94/censor_anything_backend:latest && \
           docker run -d -p 80:80 -p 443:443 \
           --network=mynetwork \
           --name censor_anything_frontend \
           -v $(pwd):/certs \
-          max94/censor_anything_backend:latest \
+          max94/censor_anything_frontend:latest && \
+          docker pull max94/censor_anything_backend:latest && \
           docker run -d \
           --network=mynetwork \
           --name censor_anything_backend \
