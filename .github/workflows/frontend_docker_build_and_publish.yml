@@ -39,7 +39,7 @@ jobs:
       run: |
         gcloud compute instances start censor-everything-big-vm --zone=us-central1-a
         gcloud compute ssh censor-everything-big-vm --zone=us-central1-a --command="\
-          docker network create mynetwork \
+          docker network create mynetwork && \
           docker pull max94/censor_anything_frontend:latest && \
           docker run -d -p 80:80 -p 443:443 \
           --network=mynetwork \
