@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Numberplate Censoring</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+  </head>
+  <body>
+    <h1>Number Plate Censoring</h1>
+    <p>Upload an image to detect and censor any numberplates on it.</p>
+    <form id="form" enctype="multipart/form-data">
+      <input
+        type="file"
+        id="file"
+        name="image"
+        accept="image/*"
+        onchange="previewImage()"
+      />
+      <label for="file">Choose an image</label>
+    </form>
+    
+    <div id="image-container">
+      <div id="loading"></div>
+    </div>
+
+    <div style="display: flex; justify-content: center;">
+      <button id="censor" onclick="censorImage()">Censor</button>
+      <a id="download">Download</a>
+    </div>    
+
+    <script>
+      const form = document.getElementById('form');
+      const file = document.getElementById('file');
+      const submit = document.getElementById('submit');
+      const censor = document.getElementById('censor');
+      const download = document.getElementById('download');
+      const imageContainer = document.getElementById('image-container');
+
+      function previewImage() {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          let drawing = false;
+          let boxes = [];
+
+          const image = new Image();
+          image.src = e.target.result;
+          image.alt = file.files[0].name;
+          
+          const images_in_div = imageContainer.getElementsByTagName('img');
+          while(images_in_div[0]) {
+            images_in_div[0].parentNode.removeChild(images_in_div[0]);
+          }
+
+          imageContainer.appendChild(image);
+          submitForm();
+        };
+
+        reader.readAsDataURL(file.files[0]);
+        censor.style.display = 'none';
+        download.style.display = 'none';
+      }
+
+      async function submitForm(e) {
+        // prevent the default form submission behavior
+        if (e) {
+          // prevent the default form submission behavior
+          e.preventDefault();
+        }
+        
+        startLoadingAnimation();
+
+        const formData = new FormData();
+        formData.append('image', file.files[0]);
+          
+        const response = await fetch('https://35.188.89.79/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.status === 400) {
+          stopLoadingAnimation();
+          alert("No numberplates were detected in the image. Please select them manually.");
+          initCanvas();
+          censor.style.display = 'block';
+          return;
+        }
+
+        const data = await response.text();
+        const image = new Image();
+
+        image.onload = function() {
+          stopLoadingAnimation();
+          initCanvas();
+        };
+
+        image.src = data;
+        image.alt = file.files[0].name;
+
+        const images_in_div = imageContainer.getElementsByTagName('img');
+          while(images_in_div[0]) {
+            images_in_div[0].parentNode.removeChild(images_in_div[0]);
+          }
+
+        imageContainer.appendChild(image);
+
+        censor.style.display = 'block';
+      }
+
+      async function censorImage() {
+        censor.style.display = 'none';
+        startLoadingAnimation();
+
+        const response = await fetch('https://35.188.89.79/censored_image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({boxes: boxes})
+        });
+        
+        if (response.status === 400) {
+          stopLoadingAnimation();
+          alert("Nothing to censor. Please draw a box around objects you want to censor.");
+          censor.style.display = 'block';
+          return;
+        }
+
+        const data = await response.json();
+
+        const download = document.getElementById('download')
+        download.style.display = 'block';
+
+        const imageUrl = data.image_url;
+
+        const image = imageContainer.querySelector('img');
+
+        image.src = imageUrl;
+
+        download.href = imageUrl;
+        download.download = 'censored_image.jpg';
+
+        boxes = [];
+        display_boxes = [];
+        let canvas = imageContainer.querySelector('canvas');
+        canvas.removeEventListener('mousedown', startDrawing);
+        canvas.removeEventListener('mousemove', draw);
+        canvas.removeEventListener('mouseup', endDrawing);
+        imageContainer.removeChild(canvas);
+
+        const buttons = imageContainer.querySelectorAll('button');
+        buttons.forEach(button => button.parentNode.removeChild(button));
+
+        stopLoadingAnimation();
+      };
+
+      // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      function startLoadingAnimation() {
+        var loading = document.getElementById('image-container').querySelector('#loading');
+        loading.style.display = 'block';
+        imageContainer.classList.add('loading');
+
+        let canvas = imageContainer.querySelectorAll('canvas');
+        canvas.forEach(canvas => canvas.classList.add('blur'));
+
+        let buttons = imageContainer.querySelectorAll('button');
+        buttons.forEach(button => button.classList.add('blur'));
+      };
+
+      function stopLoadingAnimation() {
+        var loading = document.getElementById('image-container').querySelector('#loading');
+        loading.style.display = 'none';
+        imageContainer.classList.remove('loading');
+
+        let canvas = imageContainer.querySelectorAll('canvas');
+        canvas.forEach(canvas => canvas.classList.remove('blur'));
+
+        let buttons = imageContainer.querySelectorAll('button');
+        buttons.forEach(button => button.classList.remove('blur'));
+      };
+
+      form.addEventListener('submit', submitForm);
+
+      // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+      let canvas;
+      let ctx;
+      let startX, startY, endX, endY;
+      let drawing = false;
+      let boxes = [];
+      let display_boxes = [];
+
+      function initCanvas() {
+        const image = imageContainer.querySelector('img');
+        image.onload = () => {
+          canvas = document.createElement('canvas');
+          canvas.width = image.width;
+          canvas.height = image.height;
+          canvas.style.position = 'absolute';
+          canvas.style.top = image.offsetTop + 'px';
+          canvas.style.left = image.offsetLeft + 'px';
+          ctx = canvas.getContext('2d');
+          canvas.addEventListener('mousedown', startDrawing);
+          canvas.addEventListener('mousemove', draw);
+          canvas.addEventListener('mouseup', endDrawing);
+          imageContainer.appendChild(canvas);
+        };
+        image.src = image.src; // Trigger the onload event
+      }
+
+      function startDrawing(e) {
+        drawing = true;
+        startX = e.clientX - canvas.getBoundingClientRect().left;
+        startY = e.clientY - canvas.getBoundingClientRect().top;
+      }
+
+      function drawBox(box) {
+        ctx.beginPath();
+        ctx.rect(box.startX, box.startY, box.endX - box.startX, box.endY - box.startY);
+        ctx.strokeStyle = 'orange';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+
+      function draw(e) {
+        if (!drawing) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        display_boxes.forEach(drawBox);
+        endX = e.clientX - canvas.getBoundingClientRect().left;
+        endY = e.clientY - canvas.getBoundingClientRect().top;
+        drawBox({startX, startY, endX, endY});
+      }
+
+      function endDrawing() {
+        const image = imageContainer.querySelector('img');
+        drawing = false;
+        // Calculate min and max values for x and y
+        const minX = Math.min(startX, endX);
+        const minY = Math.min(startY, endY);
+        const maxX = Math.max(startX, endX);
+        const maxY = Math.max(startY, endY);
+
+        const box = {startX: minX, startY: minY, endX: maxX, endY: maxY};
+        const mappedBox = mapCoordinatesToImage(box, image);
+
+        boxes.push(mappedBox);
+        display_boxes.push(box);
+        //const coordinates = document.createElement('p');
+        //coordinates.textContent = `(${mappedBox.startX}, ${mappedBox.startY}), (${mappedBox.endX}, ${mappedBox.endY})`;
+        //imageContainer.appendChild(coordinates);
+
+        // Create a button for each bounding box
+        const button = document.createElement('button');
+        button.textContent = 'X';
+        button.style.position = 'absolute';
+        button.style.width = '20px'; // Set a fixed width
+        button.style.height = '20px'; // Set a fixed height
+
+        button.style.textAlign = 'center'; // Horizontally center the text
+        // Calculate the offset between the canvas and the image container
+        const offsetLeft = canvas.getBoundingClientRect().left - imageContainer.getBoundingClientRect().left;
+        const offsetTop = canvas.getBoundingClientRect().top - imageContainer.getBoundingClientRect().top;
+
+        // Subtract the offset when setting the button's position
+        button.style.left = `${maxX + offsetLeft - 20}px`; // Subtract the button's width and the left offset
+        button.style.top = `${minY + offsetTop}px`; // Subtract the top offset
+        button.style.background = 'transparent'; // Make the background transparent
+        button.style.border = 'none'; // Remove the border
+        
+        button.style.color = 'orange'; // Make the text orange
+        imageContainer.appendChild(button);
+
+        // Add an event listener to the button to remove the bounding box and the button itself when clicked
+        button.addEventListener('click', function() {
+          var index = boxes.indexOf(mappedBox);
+          if (index > -1) {
+            boxes.splice(index, 1);
+          }
+
+          var index = display_boxes.indexOf(box);
+          if (index > -1) {
+            display_boxes.splice(index, 1);
+          }
+          imageContainer.removeChild(button);
+          //imageContainer.removeChild(coordinates);
+          redrawBoxes();
+        });
+      }
+
+      function redrawBoxes() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        display_boxes.forEach(drawBox);
+      }
+
+      function mapCoordinatesToImage(box, image) {
+        // Get the actual size of the image
+        const actualWidth = image.naturalWidth;
+        const actualHeight = image.naturalHeight;
+
+        // Get the displayed size of the image
+        const displayedWidth = image.width;
+        const displayedHeight = image.height;
+
+        // Calculate the scale factor
+        const scaleX = actualWidth / displayedWidth;
+        const scaleY = actualHeight / displayedHeight;
+
+        // Map the bounding box coordinates from the browser window to the image
+        const mappedBox = {
+          startX: box.startX * scaleX,
+          startY: box.startY * scaleY,
+          endX: box.endX * scaleX,
+          endY: box.endY * scaleY
+        };
+
+        return mappedBox;
+      }
+
+      
+    </script>
+  </body>
+</html>
