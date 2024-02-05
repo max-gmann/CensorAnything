@@ -1,10 +1,10 @@
-name: Frontend Docker Image Build and Push
+name: Backend Docker Image Build and Push
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'frontend/**'
+      - 'app/**'
       - '.github/workflows/backend_docker_build_and_publish.yml'
 
 jobs:
@@ -26,4 +26,4 @@ jobs:
         context: ./app
         file: ./app/Dockerfile
         push: true
-        tags: max94/censor_anything_frontend:latest
+        tags: max94/censor_anything_backend:latest
