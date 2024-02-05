@@ -42,12 +42,14 @@ jobs:
       run: |
         gcloud compute instances start censor-everything-big-vm --zone=us-central1-a
         gcloud compute ssh censor-everything-big-vm --zone=us-central1-a --command="\
-          nohup docker run -d --rm -p 80:80 -p 443:443 \
+          docker pull max94/censor_anything_frontend:latest && \
+          nohup docker run -d -p 80:80 -p 443:443 \
           --network=mynetwork \
           --name censor_anything_frontend \
           -v $(pwd):/certs \
-          max94/censor_anything_frontend:latest & \
-          nohup docker run -d --rm \
+          max94/censor_anything_frontend:latest > frontend.out 2> frontend.err < /dev/null & \
+          docker pull max94/censor_anything_backend:latest && \
+          nohup docker run -d \
           --network=mynetwork \
           --name censor_anything_backend \
-          max94/censor_anything_backend:latest &"
+          max94/censor_anything_backend:latest > backend.out 2> backend.err < /dev/null &"
