@@ -1,8 +1,11 @@
-name: Docker Image CI
+name: Backend Docker Image Build and Push
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/backend_docker_build_and_publish.yml'
 
 jobs:
   build:
