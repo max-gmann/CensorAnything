@@ -1,0 +1,72 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  input[type='file'] {
+    display: none;
+  }
+
+  label {
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+  }
+
+  img {
+    margin: 20px;
+  }
+
+  #censor {
+    display: none;
+    background-color: #f44336;
+    color: white;
+  }
+  #download {
+    display: none;
+    background-color: #416fd3;
+    color: white;
+  }
+  #censor, #download {
+    width: 150px;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 5px;
+  }
+  #image-container img {
+    max-height: 70vh;
+    width: auto;
+    object-fit: cover;
+  }
+  #loading {
+    display: none;
+    border: 16px solid #f3f3f3;
+    border-top: 16px solid #3498db;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    animation: spin 2s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  #image-container {
+    position: relative;
+  }
+  #image-container.loading img {
+    filter: blur(5px); 
+    position: relative;
+  }
+  #image-container #loading {
+    position: fixed; 
+    top: calc(50% - 50px); 
+    left: calc(50% - 50px); 
+    transform: translate(-50%, -50%);
+    z-index: 100;
+  }
+  .blur {
+    filter: blur(5px);
+  }
