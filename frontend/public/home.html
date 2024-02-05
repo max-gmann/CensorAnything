@@ -73,7 +73,7 @@
         const formData = new FormData();
         formData.append('image', file.files[0]);
           
-        const response = await fetch('http://localhost:3000/upload', {
+        const response = await fetch('http://35.188.89.79/upload', {
           method: 'POST',
           body: formData,
         });
@@ -111,7 +111,7 @@
         censor.style.display = 'none';
         startLoadingAnimation();
 
-        const response = await fetch('http://localhost:3000/censored_image', {
+        const response = await fetch('http://35.188.89.79/censored_image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -277,7 +277,7 @@
           if (index > -1) {
             boxes.splice(index, 1);
           }
-          
+
           var index = display_boxes.indexOf(box);
           if (index > -1) {
             display_boxes.splice(index, 1);

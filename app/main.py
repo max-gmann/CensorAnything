@@ -56,9 +56,12 @@ async def find_numberplates(file: UploadFile, sessionId: str = File(...)):
     file_path = f"{IMAGE_STORAGE_PATH}/{file.filename}"
 
     with open(file_path, "wb") as f:
+        print("writing file")
         f.write(contents)
 
+    print("starting prediciton")
     prediction = numberplate_detector.predict(file_path)
+    print("prediction done")
 
     bboxes = prediction["boxes"].tolist()
 

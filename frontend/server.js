@@ -12,9 +12,11 @@ const crypto = require('crypto');
 const session = require('express-session');
 
 const secretKey = crypto.randomBytes(64).toString('hex');
-const baseUrl = "http://localhost:3000";
+//const baseUrl = "http://localhost:3000";
+const baseUrl = "http://35.188.89.79";
 
-const pythonEndpoint = "http://host.docker.internal:8000";
+//const pythonEndpoint = "http://host.docker.internal:8000";
+const pythonEndpoint = "http://censor_anything_backend:8000";
 
 function generateSignedUrl(imageName, expirationTime) {
   // Create a string with the image name and the expiration time
@@ -236,6 +238,6 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${port}`)
 });
