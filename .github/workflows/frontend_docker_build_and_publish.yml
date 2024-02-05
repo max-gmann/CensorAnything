@@ -1,4 +1,4 @@
-name: Frontend Docker Image Build and Push
+name: Frontend Docker to GCP VM
 
 on:
   push:
@@ -27,3 +27,24 @@ jobs:
         file: ./app/Dockerfile
         push: true
         tags: max94/censor_anything_frontend:latest
+    - name: Setup Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+    - name: Start GCP VM and run Docker container
+      run: |
+        gcloud compute instances start censor-everything-big-vm --zone=us-central1-a
+        gcloud compute ssh censor-everything-big-vm --zone=us-central1-a --command="\
+          docker pull max94/censor_anything_frontend:latest && \
+          docker pull max94/censor_anything_backend:latest && \
+          docker run -d -p 80:80 -p 443:443 \
+          --network=mynetwork \
+          --name censor_anything_frontend \
+          -v $(pwd):/certs \
+          max94/censor_anything_backend:latest \
+          docker run -d \
+          --network=mynetwork \
+          --name censor_anything_backend \
+          max94/censor_anything_backend:latest"
