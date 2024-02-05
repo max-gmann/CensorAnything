@@ -1,5 +1,7 @@
 // import modules
 const express = require('express');
+const https = require('https');
+const http = require('http');
 const multer = require('multer');
 const axios = require('axios');
 const { createCanvas, loadImage } = require('canvas');
@@ -8,8 +10,14 @@ const fs = require('fs');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
-
 const session = require('express-session');
+
+var privateKey  = fs.readFileSync('/certs/selfsigned.key', 'utf8');
+var certificate = fs.readFileSync('/certs/selfsigned.crt', 'utf8');
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+};
 
 const secretKey = crypto.randomBytes(64).toString('hex');
 //const baseUrl = "http://localhost:3000";
@@ -32,6 +40,8 @@ function generateSignedUrl(imageName, expirationTime) {
 
 // create express app
 const app = express();
+const httpServer = http.createServer(app);
+const httpsServer = https.createServer(credentials, app);
 app.use(cors());
 app.use(cookieParser());
 app.use(express.json());
@@ -237,7 +247,9 @@ app.post('/upload', upload.single('image'), async (req, res) => {
 }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${port}`)
+httpsServer.listen(443, '0.0.0.0', () => {
+  console.log('HTTPS Server running on https://0.0.0.0:443');
+});
+httpServer.listen(80, '0.0.0.0', () => {
+  console.log('HTTP Server running on https://0.0.0.0:80');
 });
