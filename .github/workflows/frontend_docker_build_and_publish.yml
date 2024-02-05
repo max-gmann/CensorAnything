@@ -39,4 +39,4 @@ jobs:
       run: |
         gcloud compute instances start censor-everything-big-vm --zone=us-central1-a
         gcloud compute ssh censor-everything-big-vm --zone=us-central1-a --command="\
-          docker-compose up -d"
+          docker-compose -f /home/skatorlp/compose.yaml up -d"
