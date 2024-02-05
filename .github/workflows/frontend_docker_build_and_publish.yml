@@ -46,7 +46,7 @@ jobs:
           --network=mynetwork \
           --name censor_anything_frontend \
           -v $(pwd):/certs \
-          max94/censor_anything_frontend:latest & && \
+          max94/censor_anything_frontend:latest & \
           nohup docker run -d --rm \
           --network=mynetwork \
           --name censor_anything_backend \
