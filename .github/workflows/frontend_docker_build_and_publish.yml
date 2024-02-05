@@ -35,19 +35,19 @@ jobs:
       uses: google-github-actions/auth@v0.4.0
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
+          #docker pull max94/censor_anything_frontend:latest && \
+          #docker pull max94/censor_anything_backend:latest && \
     - name: Start GCP VM and run Docker container
       run: |
         gcloud compute instances start censor-everything-big-vm --zone=us-central1-a
         gcloud compute ssh censor-everything-big-vm --zone=us-central1-a --command="\
           docker network create mynetwork && \
-          docker pull max94/censor_anything_frontend:latest && \
-          docker run -d -p 80:80 -p 443:443 \
+          docker run -d --rm -p 80:80 -p 443:443 \
           --network=mynetwork \
           --name censor_anything_frontend \
           -v $(pwd):/certs \
           max94/censor_anything_frontend:latest && \
-          docker pull max94/censor_anything_backend:latest && \
-          docker run -d \
+          docker run -d --rm \
           --network=mynetwork \
           --name censor_anything_backend \
           max94/censor_anything_backend:latest"
