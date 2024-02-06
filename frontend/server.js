@@ -24,7 +24,7 @@ const secretKey = crypto.randomBytes(64).toString('hex');
 const baseUrl = "http://35.188.89.79";
 
 //const pythonEndpoint = "http://host.docker.internal:8000";
-const pythonEndpoint = "http://censor_anything_backend:8000";
+const pythonEndpoint = "http://skatorlp_censor_anything_backend_1:8000";
 
 function generateSignedUrl(imageName, expirationTime) {
   // Create a string with the image name and the expiration time
