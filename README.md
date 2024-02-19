@@ -77,7 +77,7 @@ Seeing a impressive zero-shot demo of Meta AI's [Segment Anything model](https:/
 
 ## :book: Usage
 
-The project is available here: [censor-anything.com](www.censor-anything.com) 
+The project is available here: [censor-anything.com](https://censor-anything.com) 
 
 Start by uploading any imgage you like. It will automatically scanned for numberplates. Next, you will be able to add aditional objects to censor by drawing bounding boxes. Finally, clicking the "Censor" button will apply the Segment Anything model to select all the objects with bounding boxes and return the censored image which can be downloaded.
 
