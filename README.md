@@ -32,14 +32,9 @@
 
 ## :bookmark_tabs: Table of Contents
 - [:oncoming\_automobile: Censor Anything :camera:](#oncoming_automobile-censor-anything-camera)
-    - [Automatically censors any numberplate](#automatically-censors-any-numberplate)
-    - [Add additional objects, faces or text to be censored.](#add-additional-objects-faces-or-text-to-be-censored)
-    - [Retains original image quality with high-precision cutouts](#retains-original-image-quality-with-high-precision-cutouts)
   - [:bookmark\_tabs: Table of Contents](#bookmark_tabs-table-of-contents)
   - [:information\_source: General Info](#information_source-general-info)
-    - [Version 2](#version-2)
   - [:computer: Technologies](#computer-technologies)
-  - [:wrench: Installation](#wrench-installation)
   - [:book: Usage](#book-usage)
   - [:page\_facing\_up: License](#page_facing_up-license)
 
@@ -69,7 +64,7 @@ Seeing a impressive zero-shot demo of Meta AI's [Segment Anything model](https:/
 * OpenCV: 4.5.1
 * PyTorch: 2.4.1
 
-###Deployment:
+### Deployment:
 * FastAPI
 * node.js with express
 * Google Cloud Platform Compute Engine
@@ -80,22 +75,38 @@ Seeing a impressive zero-shot demo of Meta AI's [Segment Anything model](https:/
 
 ---
 
-## :wrench: Installation
-Describe the installation process. Include any prerequisites, libraries, or APIs that need to be installed.
-
----
-
 ## :book: Usage
-Provide instructions on how to use the project after it's installed. Include code examples if applicable.
 
-(Please note that the website is running on a very cheap and thus slow server without GPU acceleration. So inference might take a while :D )
+The project is available here: [censor-anything.com](censor-anything.com) 
 
-censor-anthing.com
+Start by uploading any imgage you like. It will automatically scanned for numberplates. Next, you will be able to add aditional objects to censor by drawing bounding boxes. Finally, clicking the "Censor" button will apply the Segment Anything model to select all the objects with bounding boxes and return the censored image which can be downloaded.
+
+(Please note that the website is running on a very cheap and thus slow server without GPU acceleration. So inference might take a while :D Also, if the domain is not available anymore I have likely run out of GCP credits.)
 
 ---
 
 ## :page_facing_up: License
-Include a short description of the license or a link to the full license text.
+MIT License
+
+Copyright (c) [2024] [Max Grundmann]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 
